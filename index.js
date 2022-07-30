@@ -3,13 +3,13 @@
  * Github : https://github.com/thomasbachdev
  */
 
-import { Client } from "discord.js";
-import pref from "./preferences.json" assert { type: "json" };
+const { Client, GatewayIntentBits } = require("discord.js");
+const auth = require("./auth.json");
 
-const client = new Client();
+const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
-client.once('ready', () => {
-    console.log('Initialization done.')
+client.once("ready", () => {
+  console.log("Initialization done.");
 });
 
-client.login(pref.token);
+client.login(auth.token);
