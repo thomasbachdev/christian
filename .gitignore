@@ -103,5 +103,8 @@ dist
 # TernJS port file
 .tern-port
 
+# VS code
+.vscode
+
 # Other
 auth.json
