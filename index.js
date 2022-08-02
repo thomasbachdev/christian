@@ -13,6 +13,7 @@ const client = new Client({
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
     GatewayIntentBits.DirectMessages,
+    GatewayIntentBits.GuildMessageReactions
   ],
 });
 
@@ -36,7 +37,7 @@ client.on("messageCreate", (message) => {
       default:
         message.reply("Unknown command, try !help");
     }
-  } else {
+  } else if (message.author.id !== client.user.id) {
     // Ratio
     let x = Math.random();
     if (x <= pref["ratio-prob"]) {
@@ -49,32 +50,64 @@ client.on("messageCreate", (message) => {
 
 function handleHelp(channel) {
   channel.send(
-    `Available commands :\n\
-❓ !help : command list\n\
-👥 !event : create an event (!event "name" JJ/MM/AAAA HH:MM)`
+    `>>> **Available commands :**\n\
+❓  **!help :** command list\n\
+👥  **!event :** create an event (!event "name" JJ/MM/AAAA HH:MM)`
   );
 }
 
 function handleEvent(message, args) {
   if (args.length !== 4) {
-    message.reply('Invalid syntax');
+    message.reply("Invalid syntax");
     return;
   }
   try {
     const eventName = args[1];
-    let jma = args[2].split('/');
-    let hm = args[3].split(':');
+    let jma = args[2].split("/");
+    let hm = args[3].split(":");
     let eventDate = new Date(+jma[2], +jma[1] - 1, +jma[0], +hm[0], +hm[1]);
-    message.reply(`Event created : ${eventName} ${eventDate.toLocaleString()}`);
-    createEvent(message.channel, eventName, eventDate);
+    if (eventDate - Date.now() < 1000) {
+      message.reply("Invalid date");
+      return;
+    }
+    message
+      .reply(
+        `>>> 👥  **Event created :** ${eventName}\n📅  ${eventDate.toLocaleString(
+          "fr-FR"
+        )}\n👍  React to join`
+      )
+      .then((eventConfirm) => {
+        createEvent(eventConfirm, eventName, eventDate);
+      });
   } catch (error) {
     console.log(error);
-    message.reply('Invalid syntax');
+    message.reply("Invalid syntax");
   }
 }
 
-function createEvent(channel, eventName, eventDate) {
-  setTimeout(() => channel.send('Event now : ' + eventName), eventDate - Date.now());
+function createEvent(eventConfirm, eventName, eventDate) {
+  let users = [];
+
+  // Create a reaction collector
+  const filter = (reaction, user) => true; //reaction.emoji.name === "👍";
+  let collector = eventConfirm.createReactionCollector({ filter, time: eventDate - Date.now() - 200 });
+  collector.on("end", collected => {
+    users = collected.at(0).users.cache;
+  });
+
+  // Timeout
+  setTimeout(() => {
+    let participantsTags = "";
+    if(users.length !== 0) {
+      users.forEach((user, key) => {
+        participantsTags += user.toString() + " ";
+      });
+    }
+    
+    eventConfirm.channel.send(
+      `>>> ⏰  **Now :** ${eventName}\n👋  ${participantsTags}`
+    );
+  }, eventDate - Date.now());
 }
 
 client.login(auth.token);
