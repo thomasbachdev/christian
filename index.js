@@ -13,7 +13,7 @@ const client = new Client({
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
     GatewayIntentBits.DirectMessages,
-    GatewayIntentBits.GuildMessageReactions
+    GatewayIntentBits.GuildMessageReactions,
   ],
 });
 
@@ -52,7 +52,7 @@ function handleHelp(channel) {
   channel.send(
     `>>> **Available commands :**\n\
 ❓  **!help :** command list\n\
-👥  **!event :** create an event (!event "name" JJ/MM/AAAA HH:MM)`
+👥  **!event :** create an event (!event "name" JJ/MM/AAAA hh:mm)`
   );
 }
 
@@ -66,19 +66,20 @@ function handleEvent(message, args) {
     let jma = args[2].split("/");
     let hm = args[3].split(":");
     let eventDate = new Date(+jma[2], +jma[1] - 1, +jma[0], +hm[0], +hm[1]);
-    if (eventDate - Date.now() < 1000) {
+    if (eventDate - Date.now() > 1000) {
+      message
+        .reply(
+          `>>> 👥  **Event created :** ${eventName}\n📅  ${eventDate.toLocaleString(
+            "fr-FR"
+          )}\n▶️  React with 👍 to join`
+        )
+        .then((eventConfirm) => {
+          eventConfirm.react("👍");
+          createEvent(eventConfirm, eventName, eventDate);
+        });
+    } else {
       message.reply("Invalid date");
-      return;
     }
-    message
-      .reply(
-        `>>> 👥  **Event created :** ${eventName}\n📅  ${eventDate.toLocaleString(
-          "fr-FR"
-        )}\n👍  React to join`
-      )
-      .then((eventConfirm) => {
-        createEvent(eventConfirm, eventName, eventDate);
-      });
   } catch (error) {
     console.log(error);
     message.reply("Invalid syntax");
@@ -87,23 +88,25 @@ function handleEvent(message, args) {
 
 function createEvent(eventConfirm, eventName, eventDate) {
   let users = [];
-
   // Create a reaction collector
-  const filter = (reaction, user) => true; //reaction.emoji.name === "👍";
-  let collector = eventConfirm.createReactionCollector({ filter, time: eventDate - Date.now() - 200 });
-  collector.on("end", collected => {
+  const filter = (reaction, user) => reaction.emoji.name === "👍";
+  let collector = eventConfirm.createReactionCollector({
+    filter,
+    time: eventDate - Date.now() - 200,
+  });
+  collector.on("end", (collected) => {
     users = collected.at(0).users.cache;
   });
 
   // Timeout
   setTimeout(() => {
     let participantsTags = "";
-    if(users.length !== 0) {
+    if (users.length !== 0) {
       users.forEach((user, key) => {
         participantsTags += user.toString() + " ";
       });
     }
-    
+
     eventConfirm.channel.send(
       `>>> ⏰  **Now :** ${eventName}\n👋  ${participantsTags}`
     );
