@@ -3,7 +3,7 @@
  * Github : https://github.com/thomasbachdev
  */
 
-const { Client, GatewayIntentBits } = require("discord.js");
+const { Client, GatewayIntentBits, ActivityType } = require("discord.js");
 const auth = require("./auth.json");
 const pref = require("./preferences.json");
 
@@ -19,6 +19,7 @@ const client = new Client({
 
 client.once("ready", () => {
   console.log("Ready !");
+  client.user.setActivity('!help', {type: ActivityType.Listening});
 });
 
 client.on("messageCreate", (message) => {
