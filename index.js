@@ -36,6 +36,9 @@ client.on("messageCreate", (message) => {
       case "!event":
         handleEvent(message, args);
         break;
+      case "!coin":
+        handleCoin(message);
+        break;
       default:
         message.reply("Unknown command, try !help");
     }
@@ -86,7 +89,8 @@ function handleHelp(channel) {
   channel.send(
     `>>> **Available commands :**\n\
 ❓  **!help :** command list\n\
-👥  **!event :** create an event (!event "name" JJ/MM/AAAA hh:mm)`
+👥  **!event :** create an event (!event "name" JJ/MM/AAAA hh:mm)\n\
+🪙  **!coin :** coin-flip`
   );
 }
 
@@ -118,6 +122,11 @@ function handleEvent(message, args) {
     console.log(error);
     message.reply("Invalid syntax");
   }
+}
+
+function handleCoin(message) {
+  const x = Math.round(Math.random());
+  x ? message.reply("🪙 Head") : message.reply("🟡 Tail");
 }
 
 function createEvent(eventConfirm, eventName, eventDate) {
