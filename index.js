@@ -14,12 +14,13 @@ const client = new Client({
     GatewayIntentBits.MessageContent,
     GatewayIntentBits.DirectMessages,
     GatewayIntentBits.GuildMessageReactions,
+    GatewayIntentBits.Guilds,
   ],
 });
 
 client.once("ready", () => {
   console.log("Ready !");
-  client.user.setActivity('!help', {type: ActivityType.Listening});
+  client.user.setActivity("!help", { type: ActivityType.Listening });
 });
 
 client.on("messageCreate", (message) => {
@@ -40,14 +41,46 @@ client.on("messageCreate", (message) => {
     }
   } else if (message.author.id !== client.user.id) {
     // Ratio
-    let x = Math.random();
-    if (x <= pref["ratio-prob"]) {
-      message.reply("ratio").then((reply) => {
-        reply.react("👍");
-      });
-    }
+    handleRatio(message);
   }
 });
+
+function handleRatio(message) {
+  // Ratio if random number under proba
+  let x = Math.random();
+  if (x <= pref["ratio-prob"]) {
+    message.reply("ratio").then((reply) => {
+      reply.react("👍");
+    });
+
+    // Get server ref
+    let guild = message.guild;
+
+    try {
+      // Mute the user from sending messages in every channel
+      guild.channels.cache.forEach((channel, id) => {
+        if(channel.permissionOverwrites) {
+          channel.permissionOverwrites.create(message.author, {
+            SendMessages: false,
+          });
+        }
+      });
+
+      // Wait for the mute time and unmute the user
+      setTimeout(() => {
+        guild.channels.cache.forEach((channel, id) => {
+          if(channel.permissionOverwrites) {
+            channel.permissionOverwrites.create(message.author, {
+              SendMessages: null,
+            });
+          }
+        });
+      }, pref["mute-time"] * 1000);
+    } catch (error) {
+      console.log(error);
+    }
+  }
+}
 
 function handleHelp(channel) {
   channel.send(
