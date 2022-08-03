@@ -1,11 +1,12 @@
 /**
  * Author : Thomas Bach
- * Github : https://github.com/thomasbachdev
+ * Github : https://github.com/thomasbachdev/gontran
  */
 
 const { Client, GatewayIntentBits, ActivityType } = require("discord.js");
 const auth = require("./auth.json");
 const pref = require("./preferences.json");
+const download = require("image-downloader");
 
 const client = new Client({
   intents: [
@@ -39,6 +40,9 @@ client.on("messageCreate", (message) => {
       case "!coin":
         handleCoin(message);
         break;
+      case "!image":
+        handleImage(message);
+        break;
       default:
         message.reply("Unknown command, try !help");
     }
@@ -62,7 +66,7 @@ function handleRatio(message) {
     try {
       // Mute the user from sending messages in every channel
       guild.channels.cache.forEach((channel, id) => {
-        if(channel.permissionOverwrites) {
+        if (channel.permissionOverwrites) {
           channel.permissionOverwrites.create(message.author, {
             SendMessages: false,
           });
@@ -72,7 +76,7 @@ function handleRatio(message) {
       // Wait for the mute time and unmute the user
       setTimeout(() => {
         guild.channels.cache.forEach((channel, id) => {
-          if(channel.permissionOverwrites) {
+          if (channel.permissionOverwrites) {
             channel.permissionOverwrites.create(message.author, {
               SendMessages: null,
             });
@@ -90,7 +94,8 @@ function handleHelp(channel) {
     `>>> **Available commands :**\n\
 ❓  **!help :** command list\n\
 👥  **!event :** create an event (!event "name" JJ/MM/AAAA hh:mm)\n\
-🪙  **!coin :** coin-flip`
+🪙  **!coin :** run a coin flip\n\
+🖼️  **!image :** get a random image`
   );
 }
 
@@ -127,6 +132,21 @@ function handleEvent(message, args) {
 function handleCoin(message) {
   const x = Math.round(Math.random());
   x ? message.reply("🪙 Head") : message.reply("🟡 Tail");
+}
+
+function handleImage(message) {
+  const options = {
+    url: "https://picsum.photos/400",
+    dest: __dirname + "/img.jpg",
+  };
+
+  download
+    .image(options)
+    .then(({ filename }) => {
+      console.log("Saved to", filename);
+      message.reply({ files: [filename] });
+    })
+    .catch((error) => console.error(error));
 }
 
 function createEvent(eventConfirm, eventName, eventDate) {
